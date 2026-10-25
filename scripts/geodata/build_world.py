@@ -64,7 +64,7 @@ DEM_NODATA = -9999.0
 # DEM Filling/Editing Mask read (demFilledPct layer, generated.demQualityMasks),
 # Horn slope summaries at 100 m and 30 m, built-up accuracy, preview uses the
 # committed OSM snapshot.
-PIPELINE_VERSION = "1.3.0"
+PIPELINE_VERSION = "1.4.0"
 
 
 def osm_snapshot_path(key: str, cache: Path, preview_only: bool, refresh_osm: bool) -> Path:
@@ -531,8 +531,9 @@ def build_meta(region, grid, bbox, src, source_files, osm_data, places, stats, a
             f"Road cells: {rc['osmMain']} follow OpenStreetMap main roads, {rc['osmMinorLink']} follow OSM minor roads "
             f"used to link hamlets to them, and {rc['synthetic']} were added where OSM has no road (game "
             f"simplification). {rc['streetCellsKeptAsHousing']} densely built cells crossed by a main road stay as "
-            "housing. A 100 m road cell is far wider than the real road. Roads stop at channel cells; the game "
-            "assumes a crossing there.",
+            f"housing. A 100 m road cell is far wider than the real road. {rc['bridges']} road cells cross a "
+            "channel or open water and are drawn as bridges: they keep their water cover and do not change the "
+            "river's flow in the model.",
             "Soil health is not measured from satellites. The game estimates starting soil condition with its "
             "own model rules, so treat it as a teaching value.",
         ],

@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest'
 import { buildTerrainGeometry, computeCellColors, writeVertexColors } from '../terrain/terrainData'
 import { WATER_KIND, buildWaterMesh, computeWaterCells, reservoirFill } from '../water/waterData'
 import { terrainHeights, sampleBilinear } from '../core/coords'
-import { frameFromSim, lastSimulatedWeather } from '../core/frame'
+import { frameFromSim, lastSimulatedWeather, lookOf } from '../core/frame'
 import { coverCode, structureCode, type WeatherSeason } from '../../simulation/types'
 import { makeFrame, withLayers } from './fixtures'
 
@@ -106,6 +106,27 @@ describe('frames', () => {
     ]
     expect(lastSimulatedWeather({ step: 0, weather })).toBeNull()
     expect(lastSimulatedWeather({ step: 2, weather })?.kind).toBe('drought')
+  })
+
+  it('dresses the live view for the season on the date, not the season just played', async () => {
+    const { generateProceduralWorld } = await import('../../simulation/world/procedural')
+    const { createInitialState, step } = await import('../../simulation/engine')
+    let sim = createInitialState(generateProceduralWorld(1), 1)
+    for (let k = 0; k < 8; k++) {
+      const played = sim.weather[sim.step]
+      sim = step(sim).state
+      const look = lookOf(frameFromSim(sim))
+      // the top bar shows sim.season, so the colours and sky must follow it
+      expect(look.season).toBe(sim.season)
+      expect(look.season).not.toBe(played.season)
+      // a drought's parched land lingers into the next season; a past storm does not keep raining
+      expect(look.weather).toBe(played.kind === 'drought' ? 'drought' : 'normal')
+    }
+  })
+
+  it('shows a past snapshot as the season it ended on', () => {
+    const frame = { season: 'wet', weather: 'heavy-rain' } as Parameters<typeof lookOf>[0]
+    expect(lookOf(frame)).toEqual({ season: 'wet', weather: 'heavy-rain' })
   })
 
   it('builds a frame from a live simulation state', async () => {

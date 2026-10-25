@@ -3,7 +3,6 @@ import { Home, RotateCcw, RotateCw, ZoomIn, ZoomOut } from 'lucide-react'
 import { Suspense, useEffect, useRef, useState, type ReactNode } from 'react'
 import { resetCamera, rotateCamera, zoomCamera } from '../game/controls/cameraBus'
 import { useGame, type PanelId } from '../state/store'
-import { WorldAttribution } from '../ui/common/WorldAttribution'
 import { restoreRememberedFocus } from '../ui/common/focusReturn'
 import { PanelIdContext } from '../ui/common/Panel'
 import { CompareScreen } from '../ui/compare/CompareScreen'
@@ -103,13 +102,6 @@ function World() {
       </Suspense>
     </CanvasBoundary>
   )
-}
-
-/** Data attribution that must stay visible whenever a real-data map is shown. */
-function GameAttribution() {
-  const world = useGame((s) => s.world)
-  // in the flow under the scenario bar (never covering it), wrapped so the full credit is readable by everyone
-  return <WorldAttribution world={world} className="pointer-events-auto ml-auto w-fit max-w-full text-right" />
 }
 
 /** On-screen camera controls (the render team's camera bus; keyboard: - = Q E Home). Only for the 3D view. */
@@ -232,7 +224,8 @@ function GameScreen() {
           <div className="flex flex-1 justify-center">
             <TimeControls />
           </div>
-          <div className="flex min-w-0 justify-end max-xl:basis-full max-xl:justify-center xl:flex-1">
+          {/* sized to its contents, so all six indicators show; it scrolls only on a phone */}
+          <div className="flex max-w-full grow justify-end max-xl:basis-full max-xl:justify-center">
             <MetricsBar />
           </div>
         </div>
@@ -270,9 +263,8 @@ function GameScreen() {
           <div className="order-last flex min-w-0 justify-center lg:order-none">
             <Toolbar />
           </div>
-          <div className="flex min-w-0 flex-col items-end gap-1">
+          <div className="flex min-w-0 justify-end">
             <ScenarioBar />
-            <GameAttribution />
           </div>
         </div>
       </div>

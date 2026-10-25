@@ -470,7 +470,15 @@ describe('Amoria in the browser', () => {
     expect(useGame.getState().worldId).toBe(real.id)
     expect(useGame.getState().sim!.meta.kind).toBe('real-data-derived')
     const notes = (useGame.getState().world as { details?: { attribution?: string[] } }).details
-    if (notes?.attribution?.length) expect(screen.getByText(new RegExp(notes.attribution[0].slice(0, 20).replace(/[.*+?^${}()|[\]\\]/g, '\\$&')))).toBeInTheDocument()
+    // the credits stay off the game screen and live in Settings and help, About the model, This world
+    expect(screen.queryByTestId('map-credits')).not.toBeInTheDocument()
+    if (notes?.attribution?.length) {
+      act(() => useGame.getState().openPanel('settings'))
+      const settings = screen.getByRole('dialog', { name: 'Settings and help' })
+      fireEvent.click(within(settings).getByRole('tab', { name: 'About the model' }))
+      expect(within(settings).getByText(new RegExp(notes.attribution[0].slice(0, 20).replace(/[.*+?^${}()|[\]\\]/g, '\\$&')))).toBeInTheDocument()
+      act(() => useGame.getState().openPanel(null))
+    }
     // the inspector shows the observed land cover next to the game's adjusted start, and says why they differ
     const { worldCellData } = await import('../../src/state/worlds')
     const { observedCover } = worldCellData(useGame.getState().world)

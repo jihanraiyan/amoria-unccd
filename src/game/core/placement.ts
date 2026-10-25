@@ -8,11 +8,12 @@ import { VEG } from '../../simulation/params'
 import { coverCode, structureCode, type Season } from '../../simulation/types'
 import { cellGradient, cellToWorld, heightAt, type GridDims } from './coords'
 import { EMBANKMENT_MIN_HEIGHT, embankmentCrest, reservoirBasins, type ReservoirBasins } from './reservoir'
-import type { WorldFrame } from './frame'
+import { lookOf, type WorldFrame } from './frame'
 import { hash01, hashRange } from './hash'
 import { COLORBLIND_TINTS, FOLIAGE, PALETTE, ROOFS, AWNINGS, clamp01, linear, mix, seasonDryness, smoothstep, type RGB } from './palette'
 import { overlayDomain } from './overlays'
 import { EROSION_VISUAL_REF, SILT_FAN_MIN, SILT_VISUAL_REF } from './visualRefs'
+import { riverDepthForStage } from '../water/waterData'
 
 export interface SlotTargets {
   slotsPerCell: number
@@ -266,7 +267,8 @@ export function computeVegetation(frame: WorldFrame, heights: Float32Array, opts
   const n = terrain.width * terrain.height
   const t = createSlotTargets(n, VEG_SLOTS)
   const [eLo, eHi] = elevationRange(terrain.elevationM)
-  const dryness = seasonDryness(frame.season, frame.weather)
+  const look = lookOf(frame)
+  const dryness = seasonDryness(look.season, look.weather)
   const cb = opts.colorblind === true
   const stressedFoliage = cb ? COLORBLIND_TINTS.foliageStressed : FOLIAGE.stressed
   const dryReed = cb ? COLORBLIND_TINTS.parched : PALETTE.reedDry
@@ -401,7 +403,8 @@ export function computeGroundMarks(frame: WorldFrame, heights: Float32Array, opt
   const dims = terrain
   const n = terrain.width * terrain.height
   const t = createSlotTargets(n, MARK_SLOTS)
-  const dryness = seasonDryness(frame.season, frame.weather)
+  const look = lookOf(frame)
+  const dryness = seasonDryness(look.season, look.weather)
   const yieldRef = yieldReference(frame)
 
   for (let i = 0; i < n; i++) {
@@ -421,9 +424,9 @@ export function computeGroundMarks(frame: WorldFrame, heights: Float32Array, opt
       const wf = frame.fieldsReady ? clamp01(fields.waterFactor[i]) : 0.85
       const yieldN = frame.fieldsReady ? clamp01(fields.yieldT[i] / yieldRef) : 0.75
       const health = fallow ? 0 : clamp01(0.55 * wf + 0.45 * yieldN)
-      const seasonal = frame.season === 'dry' ? mix(CROP_COLORS.lush, CROP_COLORS.ripe, 0.75) : intensity === 2 ? CROP_COLORS.deep : intensity === 0 ? CROP_COLORS.sprout : CROP_COLORS.lush
+      const seasonal = look.season === 'dry' ? mix(CROP_COLORS.lush, CROP_COLORS.ripe, 0.75) : intensity === 2 ? CROP_COLORS.deep : intensity === 0 ? CROP_COLORS.sprout : CROP_COLORS.lush
       let color = mix(cropFailed, mix(cropStressed, seasonal, smoothstep(0.25, 0.8, health)), smoothstep(0.05, 0.35, health))
-      if (frame.weather === 'drought') color = mix(color, cropStressed, 0.3 * (1 - wf))
+      if (look.weather === 'drought') color = mix(color, cropStressed, 0.3 * (1 - wf))
       color = mix(color, CROP_COLORS.stubble, smoothstep(0.6, 0.2, layers.soilHealth[i]) * 0.25)
       if (fallow) color = mix(CROP_COLORS.stubble, cropFailed, smoothstep(0.5, 0.15, layers.soilHealth[i]) * 0.6)
       const rows = isAgro ? [-0.3, -0.1, 0.32] : intensity === 0 ? [-0.27, 0, 0.27] : intensity === 1 ? [-0.3, -0.1, 0.1, 0.3] : [-0.32, -0.16, 0, 0.16, 0.32]
@@ -516,7 +519,14 @@ export function computeGroundMarks(frame: WorldFrame, heights: Float32Array, opt
 
 // ---------------------------------------------------------------- roads
 
-export const ROAD_SLOTS = 9
+/**
+ * Slots per road cell: the centre, a segment toward each of the 8 neighbours, and on a bridge a
+ * pier plus a pair of railings along up to 4 of its links.
+ */
+export const ROAD_SLOTS = 18
+const BRIDGE_PIER_SLOT = 9
+const BRIDGE_RAIL_SLOT = 10
+const BRIDGE_RAIL_LINKS = 4
 const ROAD_DIRS: [number, number][] = [
   [1, 0],
   [-1, 0],
@@ -528,6 +538,11 @@ const ROAD_DIRS: [number, number][] = [
   [-1, -1],
 ]
 export const ROAD_WIDTH = 0.34
+/** Deck clearance above the highest river stage the view can draw. */
+export const BRIDGE_CLEARANCE = 0.1
+const BRIDGE_RAIL_HEIGHT = 0.05
+const BRIDGE_RAIL_WIDTH = 0.025
+const BRIDGE_PIER_WIDTH = 0.1
 
 /** True if structure at index is a road. */
 const isRoadAt = (structure: Uint8Array, i: number) => structure[i] === S.road
@@ -551,21 +566,96 @@ export function roadLinks(structure: Uint8Array, width: number, height: number, 
   return links
 }
 
+/** Road on a river channel or open water: drawn as a bridge deck above the water. */
+function bridgeCell(frame: WorldFrame, i: number): boolean {
+  return isRoadAt(frame.layers.structure, i) && (frame.terrain.channel[i] === 1 || frame.layers.cover[i] === C.water)
+}
+
+/**
+ * Surface height of each road cell centre: the ground for a road, and for a bridge a level deck
+ * above the highest river the view draws and at least as high as the dry banks around it.
+ */
+export function roadDeckHeights(frame: WorldFrame, heights: Float32Array): Float32Array {
+  const { terrain, layers } = frame
+  const dims = terrain
+  const { width, height } = terrain
+  const n = width * height
+  const out = new Float32Array(n).fill(NaN)
+  const flood = riverDepthForStage(1) + BRIDGE_CLEARANCE
+  for (let i = 0; i < n; i++) {
+    if (!isRoadAt(layers.structure, i)) continue
+    const { x: cx, z: cz } = cellToWorld(i, dims)
+    const ground = heightAt(heights, dims, cx, cz)
+    if (!bridgeCell(frame, i)) {
+      out[i] = ground
+      continue
+    }
+    let deck = ground + flood
+    const x = i % width
+    const z = Math.floor(i / width)
+    for (let dz = -1; dz <= 1; dz++)
+      for (let dx = -1; dx <= 1; dx++) {
+        const nx = x + dx
+        const nz = z + dz
+        if ((dx === 0 && dz === 0) || nx < 0 || nz < 0 || nx >= width || nz >= height) continue
+        const j = nz * width + nx
+        if (terrain.channel[j] === 1 || layers.cover[j] === C.water) continue
+        const bank = cellToWorld(j, dims)
+        deck = Math.max(deck, heightAt(heights, dims, bank.x, bank.z))
+      }
+    out[i] = deck
+  }
+  return out
+}
+
+/** A road piece between two explicit heights (bridge decks and the ramps onto them). */
+function setRamp(t: SlotTargets, s: number, x0: number, y0: number, z0: number, x1: number, y1: number, z1: number, width: number, thick: number, c: RGB) {
+  const dx = x1 - x0
+  const dz = z1 - z0
+  const horiz = Math.hypot(dx, dz)
+  setSlot(t, s, 0, (x0 + x1) / 2, (y0 + y1) / 2, (z0 + z1) / 2, yawOf(dx, dz), Math.atan2(y1 - y0, horiz), Math.hypot(horiz, y1 - y0), thick, width, c)
+}
+
 export function computeRoads(frame: WorldFrame, heights: Float32Array): SlotTargets {
   const { terrain, layers } = frame
   const dims = terrain
   const n = terrain.width * terrain.height
   const t = createSlotTargets(n, ROAD_SLOTS)
+  const deckY = roadDeckHeights(frame, heights)
   for (let i = 0; i < n; i++) {
     if (!isRoadAt(layers.structure, i)) continue
     const { x: cx, z: cz } = cellToWorld(i, dims)
     const base = i * ROAD_SLOTS
-    const y = heightAt(heights, dims, cx, cz)
-    const tint = mix(PALETTE.roadSurface, PALETTE.roadEdge, hashRange(0, 0.15, i, 0, 41))
+    const bridge = bridgeCell(frame, i)
+    const y = deckY[i]
+    const tint = bridge ? PALETTE.bridgeDeck : mix(PALETTE.roadSurface, PALETTE.roadEdge, hashRange(0, 0.15, i, 0, 41))
     setSlot(t, base, 0, cx, y - 0.015, cz, 0, 0, ROAD_WIDTH, 0.06, ROAD_WIDTH, tint)
+    let rails = 0
     for (const d of roadLinks(layers.structure, terrain.width, terrain.height, i)) {
       const [dx, dz] = ROAD_DIRS[d]
-      setSegment(t, base + 1 + d, 0, heights, dims, cx, cz, cx + dx * 0.52, cz + dz * 0.52, -0.015, ROAD_WIDTH, 0.06, tint)
+      const j = i + dz * terrain.width + dx
+      const ex = cx + dx * 0.52
+      const ez = cz + dz * 0.52
+      if (!bridge && !bridgeCell(frame, j)) {
+        setSegment(t, base + 1 + d, 0, heights, dims, cx, cz, ex, ez, -0.015, ROAD_WIDTH, 0.06, tint)
+        continue
+      }
+      // onto or along a bridge: meet the neighbour half way between the two surface heights
+      const ey = (y + deckY[j]) / 2
+      setRamp(t, base + 1 + d, cx, y - 0.015, cz, ex, ey - 0.015, ez, ROAD_WIDTH, 0.06, tint)
+      if (!bridge || rails >= BRIDGE_RAIL_LINKS) continue
+      const len = Math.hypot(dx, dz)
+      const ox = (-dz / len) * (ROAD_WIDTH / 2)
+      const oz = (dx / len) * (ROAD_WIDTH / 2)
+      for (const side of [1, -1]) {
+        setRamp(t, base + BRIDGE_RAIL_SLOT + rails * 2 + (side > 0 ? 0 : 1), cx + side * ox, y + 0.045, cz + side * oz, ex + side * ox, ey + 0.045, ez + side * oz, BRIDGE_RAIL_WIDTH, BRIDGE_RAIL_HEIGHT, PALETTE.bridgeRail)
+      }
+      rails++
+    }
+    if (bridge) {
+      // one pier from the river bed up to the deck
+      const bed = heightAt(heights, dims, cx, cz) - 0.05
+      setSlot(t, base + BRIDGE_PIER_SLOT, 0, cx, bed, cz, 0, 0, BRIDGE_PIER_WIDTH, Math.max(0.05, y - bed - 0.02), BRIDGE_PIER_WIDTH, PALETTE.bridgeRail)
     }
   }
   return t

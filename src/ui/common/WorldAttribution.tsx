@@ -1,6 +1,6 @@
-// Data credits that the source licences require wherever a real-data map is shown
-// (Copernicus DEM notice, ESA WorldCover CC BY 4.0, OpenStreetMap ODbL). One component for
-// the game screen, the title screen and Compare Futures.
+// Data credits that the source licences require for a real-data map (Copernicus DEM notice,
+// ESA WorldCover CC BY 4.0, OpenStreetMap ODbL). Shown on the title screen and Compare Futures;
+// in the game they sit in Settings and help, under This world.
 import { useEffect, useState } from 'react'
 import type { WorldInput } from '../../simulation/types'
 import { loadWorldNotes, worldNotes } from '../../state/worlds'

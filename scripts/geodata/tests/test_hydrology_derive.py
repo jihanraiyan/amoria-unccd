@@ -90,7 +90,7 @@ class TestSettlement:
         assert st.road_counts["synthetic"] == 0
         assert (st.cover[st.structure == STRUCT["road"]] == COVER["urban"]).all()
 
-    def test_roads_skip_channels_and_channels_become_water(self):
+    def test_roads_cross_channels_as_bridges_and_channels_stay_water(self):
         n = 6
         observed = np.full((n, n), COVER["cropland"], dtype=np.uint8)
         channel = np.zeros((n, n), dtype=np.uint8)
@@ -99,7 +99,8 @@ class TestSettlement:
         main[2, :] = 1
         st = derive.build_settlement(observed, np.zeros((n, n)), channel, np.zeros((n, n)), main,
                                      np.zeros((n, n), dtype=np.uint8), REGION)
-        assert st.structure[2, 3] == 0
+        assert st.structure[2, 3] == STRUCT["road"]
+        assert st.road_counts["bridges"] == 1
         assert (st.cover[:, 3] == COVER["water"]).all()
 
 
@@ -133,7 +134,7 @@ class TestChannels:
         assert all(channel.ravel()[i] for i in upstream)
         assert body.sum() == 0
 
-    def test_water_body_stays_water_without_houses_or_roads(self):
+    def test_water_body_stays_water_without_houses_and_a_road_bridges_it(self):
         n = 6
         observed = np.full((n, n), COVER["cropland"], dtype=np.uint8)
         observed[2, 2] = COVER["water"]
@@ -143,7 +144,8 @@ class TestChannels:
         main[2, :] = 1
         st = derive.build_settlement(observed, built, np.zeros((n, n), dtype=np.uint8), np.zeros((n, n)), main,
                                      np.zeros((n, n), dtype=np.uint8), REGION)
-        assert st.cover[2, 2] == COVER["water"] and st.structure[2, 2] == 0
+        assert st.cover[2, 2] == COVER["water"] and st.structure[2, 2] == STRUCT["road"]
+        assert not (st.structure == STRUCT["housing"]).any()
 
     def test_check_world_fails_on_a_channel_break(self):
         elev, cover, structure, channel, to, acc, outlet = tilted_world()

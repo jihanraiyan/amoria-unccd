@@ -265,7 +265,7 @@ export function MetricsBar() {
   const { now, prev } = useValues()
   if (!sim || !now) return null
   return (
-    <nav className="panel scroll-soft pointer-events-auto flex h-12 min-w-0 items-center gap-0.5 overflow-x-auto px-1" aria-label="Indicators">
+    <nav className="panel scroll-soft pointer-events-auto flex h-12 max-w-full shrink-0 items-center gap-0.5 overflow-x-auto px-1" aria-label="Indicators">
       <MetricChip
         id="budget"
         icon={Coins}

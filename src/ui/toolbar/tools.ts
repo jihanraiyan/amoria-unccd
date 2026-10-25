@@ -62,7 +62,7 @@ export const TOOLS: readonly ToolDef[] = [
     icon: Route,
     key: 'R',
     group: 'build',
-    description: 'Lay road to connect new homes, farms and markets.',
+    description: 'Lay road to connect new homes, farms and markets. Across a river it becomes a bridge, which costs more.',
     tradeoffs: {
       gain: 'Access for new development and trade.',
       cost: 'Paved ground lets less rain soak in, so more runs off. Roads need upkeep.',

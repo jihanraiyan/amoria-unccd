@@ -18,7 +18,7 @@
 // Values for the limits live in params.PLACEMENT.
 import { ECON, HYDRO, PLACEMENT } from '../params'
 import { INTENSITIES, type ActionValidation, type PlayerAction, type SimulationState, type WorldLayers } from '../types'
-import { C, S, anyWithin, cellHa, forNeighbors } from './cells'
+import { C, S, anyWithin, cellHa, forNeighbors, isBridge } from './cells'
 import { waterworksIntakes } from './hydrology'
 
 /** Placement limits (values from params.PLACEMENT, where each is tagged and explained). */
@@ -141,7 +141,7 @@ function baseChecks(state: SimulationState, i: number, allowChannel = false): st
 function checkCell(state: SimulationState, action: Exclude<PlayerAction, { type: 'loan' } | { type: 'repay' } | { type: 'set-levy' }>, i: number): CellCheck {
   const { terrain, layers } = state
   const { width, height } = terrain
-  const allowChannel = action.type === 'reservoir' || action.type === 'demolish'
+  const allowChannel = action.type === 'reservoir' || action.type === 'demolish' || action.type === 'road'
   const base = baseChecks(state, i, allowChannel)
   if (base) return fail(base)
   const cover = layers.cover[i]
@@ -158,7 +158,8 @@ function checkCell(state: SimulationState, action: Exclude<PlayerAction, { type:
     case 'road': {
       if (st === S.road) return fail('Already a road')
       if (!free) return fail('Occupied by a structure')
-      if (openWater) return fail('Cannot build a road on open water')
+      // over a river or open water the road is a bridge: a flat price, and the water stays
+      if (openWater || terrain.channel[i]) return pass(cap.bridge)
       if (slope > LIMITS.roadSlope) return fail(`Too steep for a road (over ${pctLimit(LIMITS.roadSlope)})`)
       return pass(removal + cap.road * (1 + cap.roadSlopeMult * slope), felled)
     }
@@ -386,9 +387,11 @@ export function applyLandUse(state: SimulationState, action: PlayerAction, valid
     if (!validation.cellOk[k]) return
     switch (action.type) {
       case 'road':
-        setCover(i, C.urban)
         L.structure[i] = S.road
         L.structureLevel[i] = 0
+        // a bridge leaves the water below as it is
+        if (state.terrain.channel[i] || L.cover[i] === C.water) break
+        setCover(i, C.urban)
         L.vegetation[i] = Math.min(L.vegetation[i], VEG_AFTER.built)
         break
       case 'housing':
@@ -450,9 +453,10 @@ export function applyLandUse(state: SimulationState, action: PlayerAction, valid
           silt *= (reservoirCells - 1) / reservoirCells
           reservoirCells--
         }
+        const wasBridge = isBridge(state.terrain, L, i)
         L.structure[i] = S.none
         L.structureLevel[i] = 0
-        setCover(i, state.terrain.channel[i] ? C.water : C.bare)
+        setCover(i, state.terrain.channel[i] || wasBridge ? C.water : C.bare)
         L.vegetation[i] = 0
         break
       }

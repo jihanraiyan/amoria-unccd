@@ -2,7 +2,7 @@
 // Shared by the game view, the landing view and the snapshot compare views.
 import type { OverlayId } from '../core/overlays'
 import { useGame } from '../../state/store'
-import type { WorldFrame } from '../core/frame'
+import { lookOf, type WorldFrame } from '../core/frame'
 import { terrainHeights } from '../core/coords'
 import { Atmosphere } from '../effects/Atmosphere'
 import { RunoffArrows } from '../effects/RunoffArrows'
@@ -29,7 +29,7 @@ export function WorldRenderer({ frame, sourceKey, quality, overlay, overlayDomai
   const extent = Math.max(frame.terrain.width, frame.terrain.height) / 2
   return (
     <>
-      <Atmosphere season={frame.season} weather={frame.weather} quality={quality} extent={extent} sourceKey={sourceKey} overlayActive={overlayOn} ground={{ heights: terrainHeights(frame.terrain), dims: frame.terrain }} />
+      <Atmosphere season={lookOf(frame).season} weather={lookOf(frame).weather} quality={quality} extent={extent} sourceKey={sourceKey} overlayActive={overlayOn} ground={{ heights: terrainHeights(frame.terrain), dims: frame.terrain }} />
       <TerrainMesh frame={frame} sourceKey={sourceKey} overlay={overlay} overlayDomain={overlayDomain} colorblind={colorblind} />
       <WaterSurface frame={frame} sourceKey={sourceKey} overlayActive={overlayOn} />
       <PropLayers frame={frame} sourceKey={sourceKey} quality={quality} colorblind={colorblind} overlayActive={overlayOn} />

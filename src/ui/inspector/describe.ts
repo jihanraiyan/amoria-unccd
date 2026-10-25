@@ -36,6 +36,7 @@ export function economicRole(cover: LandCover, structure: Structure, irrigated: 
     case 'housing':
       return 'Homes for residents. Brings tax income and workers, and adds water and food demand.'
     case 'road':
+      if (cover === 'water') return 'Bridge. Carries the road across the water and links the land on both banks. The river flows on underneath. Costs upkeep.'
       return 'Transport link. Gives nearby land access for development and trade. Costs upkeep.'
     case 'market':
       return 'Jobs and trade income for the town.'
@@ -122,6 +123,8 @@ export const intensityLabel = (code: number): string => INTENSITIES[code] ?? 'me
 export function cellSummary(layers: WorldLayers, i: number): { cover: LandCover; structure: Structure; title: string } {
   const cover = coverName(layers.cover[i])
   const structure = structureName(layers.structure[i])
+  // a road over a river or open water is a bridge (channel cells are always water cover)
+  if (structure === 'road' && cover === 'water') return { cover, structure, title: 'Bridge over open water' }
   const s = STRUCTURE_LABEL[structure]
   return { cover, structure, title: s ? `${s} on ${COVER_LABEL[cover].toLowerCase()}` : COVER_LABEL[cover] }
 }

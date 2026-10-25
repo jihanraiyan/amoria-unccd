@@ -341,6 +341,7 @@ export const ECON = {
     {
       road: 1400,
       roadSlopeMult: 3,
+      bridge: 9000,
       housing: 7900,
       housingUpgrade: 12_000,
       cropland: 1400,
@@ -359,7 +360,7 @@ export const ECON = {
       market: 30_000,
       demolish: 1000,
     },
-    'One-off costs per cell. Building costs (road, housing, cropland, waterworks, market) are for open ground (bare land or a harvested field). Building on land with other cover first pays to remove it, exactly what the clear action charges: clear (1 100) on grassland and agroforestry, clear + clearForestExtra (3 100) on forest, clear + drainWetlandExtra (3 100) on wetland, and the timber is sold either way. So farming grassland costs 1 100 + 1 400 = 2 500 and building homes on forest 3 100 + 7 900 = 11 000, the same whether done in one step or two. Road slope cost applies to the building part.',
+    'One-off costs per cell. Building costs (road, housing, cropland, waterworks, market) are for open ground (bare land or a harvested field). Building on land with other cover first pays to remove it, exactly what the clear action charges: clear (1 100) on grassland and agroforestry, clear + clearForestExtra (3 100) on forest, clear + drainWetlandExtra (3 100) on wetland, and the timber is sold either way. So farming grassland costs 1 100 + 1 400 = 2 500 and building homes on forest 3 100 + 7 900 = 11 000, the same whether done in one step or two. Road slope cost applies to the building part. A road over a river channel or open water is a bridge at a flat 9 000 per cell, about six times a road, with no clearing or slope cost; it keeps the road upkeep.',
   ),
   timberPerCell: gb({ forest: 1900, agroforestry: 800 }, 'Timber sale when clearing, scaled by vegetation cover: clearing forest pays now. This is the price for the first hectare sold in a season (see timberMarket).'),
   timberMarket: gb(

@@ -388,8 +388,9 @@ export function parseWorldFile(doc: unknown, expectedId?: string): LoadedWorld {
   if (structU8) {
     let badLevel = 0
     let onChannel = 0
-    // The game builds housing and roads only on urban cover, and nothing but a reservoir on open
-    // water or wetland; a file that breaks this was damaged or edited by hand.
+    // The game builds housing and roads only on urban cover, and nothing but a reservoir or a
+    // bridge (a road on a channel or open water, which keeps its water cover) on open water or
+    // wetland; a file that breaks this was damaged or edited by hand.
     const offUrban: Record<'housing' | 'road', { count: number; first: number }> = {
       housing: { count: 0, first: -1 },
       road: { count: 0, first: -1 },
@@ -400,19 +401,20 @@ export function parseWorldFile(doc: unknown, expectedId?: string): LoadedWorld {
       const s = structU8[i]
       const lv = levelU8 ? levelU8[i] : s === housing ? 1 : 0
       if ((s === housing) !== lv > 0) badLevel++
-      if (s !== 0 && channelU8?.[i]) onChannel++
-      if ((s === housing || s === road) && coverU8[i] !== urban) {
+      const bridge = s === road && coverU8[i] === water
+      if (s !== 0 && !bridge && channelU8?.[i]) onChannel++
+      if ((s === housing || (s === road && !bridge)) && coverU8[i] !== urban) {
         const slot = offUrban[s === housing ? 'housing' : 'road']
         slot.count++
         if (slot.first < 0) slot.first = i
       }
-      if (s !== 0 && s !== reservoir && (coverU8[i] === water || coverU8[i] === wetland)) {
+      if (s !== 0 && s !== reservoir && !bridge && (coverU8[i] === water || coverU8[i] === wetland)) {
         onWet++
         if (firstWet < 0) firstWet = i
       }
     }
     if (badLevel) issues.add(`${badLevel} cells have a housing level that does not match their structure`)
-    if (onChannel) issues.add(`${onChannel} channel cells carry a structure`)
+    if (onChannel) issues.add(`${onChannel} channel cells carry a structure other than a bridge`)
     const at = (i: number) => `row ${Math.floor(i / width)}, column ${i % width}`
     for (const [name, { count, first }] of Object.entries(offUrban)) {
       if (count) issues.add(`${count} ${name} cells are not on urban cover (first at ${at(first)}: ${LAND_COVERS[coverU8[first]]})`)

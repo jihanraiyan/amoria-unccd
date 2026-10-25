@@ -1,5 +1,5 @@
 // Shared cell codes and small spatial helpers used by every model.
-import { coverCode, structureCode, type LandCover, type Terrain } from '../types'
+import { coverCode, structureCode, type LandCover, type Terrain, type WorldLayers } from '../types'
 
 export const C = {
   forest: coverCode('forest'),
@@ -20,6 +20,14 @@ export const S = {
   waterworks: structureCode('waterworks'),
   market: structureCode('market'),
 } as const
+
+/**
+ * A road on a river channel or open water is a bridge. It carries traffic and links the road
+ * network, but the cell stays water: the land models skip it, so the river below is unchanged.
+ */
+export function isBridge(terrain: Pick<Terrain, 'channel'>, layers: Pick<WorldLayers, 'structure' | 'cover'>, i: number): boolean {
+  return layers.structure[i] === S.road && (terrain.channel[i] === 1 || layers.cover[i] === C.water)
+}
 
 export const I_LOW = 0
 export const I_MEDIUM = 1

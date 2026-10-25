@@ -129,11 +129,19 @@ describe('parseWorldFile', () => {
     a.layers.structureLevel[9] = 0
     expectInvalid(a, /housing level/)
     const b = tinyDoc()
-    b.layers.structure[3] = structureCode('road')
-    expectInvalid(b, /channel cells carry a structure/)
+    b.layers.structure[3] = structureCode('market')
+    expectInvalid(b, /channel cells carry a structure other than a bridge/)
     const c = tinyDoc()
     c.layers.cover[3] = coverCode('cropland')
     expectInvalid(c, /channel cells are not water/)
+  })
+
+  it('accepts a road on a channel as a bridge that keeps its water cover', () => {
+    const doc = tinyDoc()
+    doc.layers.structure[3] = structureCode('road')
+    const w = parseWorldFile(doc)
+    expect(w.structure?.[3]).toBe(structureCode('road'))
+    expect(w.cover[3]).toBe(coverCode('water'))
   })
 
   it('rejects structures that do not match their cover', () => {
@@ -375,13 +383,22 @@ describe('exported real-data world file', () => {
     expect(count(coverCode('grassland'), world.cover) / n).toBeGreaterThan(0.2)
   })
 
-  it('passes the structure and cover checks: housing and roads on urban, nothing on water', () => {
+  it('passes the structure and cover checks: housing and roads on urban, nothing on water but bridges', () => {
     expect(() => parseWorldText(realText(), 'kaani-machakos')).not.toThrow()
+    let bridges = 0
     for (let i = 0; i < n; i++) {
       const s = world.structure![i]
-      if (s === structureCode('housing') || s === structureCode('road')) expect(world.cover[i]).toBe(coverCode('urban'))
-      if (world.cover[i] === coverCode('water')) expect(s).toBe(0)
+      const water = world.cover[i] === coverCode('water')
+      if (s === structureCode('housing')) expect(world.cover[i]).toBe(coverCode('urban'))
+      if (s === structureCode('road') && !water) expect(world.cover[i]).toBe(coverCode('urban'))
+      if (water && s !== 0) {
+        // the only structure on water is a road crossing it: a bridge
+        expect(s).toBe(structureCode('road'))
+        bridges++
+      }
     }
+    // the OSM main roads cross Kaani's streams in a few places
+    expect(bridges).toBeGreaterThan(0)
   })
 
   it('keeps every cell whose most common WorldCover class is open water as water', () => {

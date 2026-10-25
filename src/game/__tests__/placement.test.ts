@@ -4,6 +4,7 @@ import {
   BUILD_SLOTS,
   MARK_KIND,
   MARK_SLOTS,
+  BRIDGE_CLEARANCE,
   ROAD_SLOTS,
   VEG_KIND,
   VEG_SLOTS,
@@ -13,12 +14,14 @@ import {
   computeVegetation,
   countKind,
   housesForLevel,
+  roadDeckHeights,
   roadLinks,
   type SlotTargets,
 } from '../core/placement'
 import { terrainHeights } from '../core/coords'
 import { coverCode, structureCode } from '../../simulation/types'
 import { makeFrame, withLayers } from './fixtures'
+import { riverDepthForStage } from '../water/waterData'
 
 const TREE_KINDS = [VEG_KIND.conifer, VEG_KIND.pineTall, VEG_KIND.pineRound, VEG_KIND.broadleaf, VEG_KIND.oak, VEG_KIND.poplar, VEG_KIND.fruit]
 const trees = (t: SlotTargets, cell?: number) => {
@@ -221,6 +224,31 @@ describe('roads and buildings', () => {
     // 4 pads + arms: 6<->7, 7<->8, 8<->13 (diagonal allowed: no orthogonal link between them)
     expect(countKind(t)).toBe(4 + 2 + 2 + 2)
     expect(t.kind.length).toBe(25 * ROAD_SLOTS)
+  })
+
+  it('a road across a river is drawn as a bridge deck above the highest water, with rails and a pier', () => {
+    // a north-south river in column 2, a road across it along row 2
+    const f = withLayers(
+      { ...makeFrame(5, 5), terrain: { ...makeFrame(5, 5).terrain, channel: Uint8Array.from({ length: 25 }, (_, i) => (i % 5 === 2 ? 1 : 0)) } },
+      (l) => {
+        for (let z = 0; z < 5; z++) l.cover[z * 5 + 2] = coverCode('water')
+        for (const i of [11, 12, 13]) l.structure[i] = structureCode('road')
+      },
+    )
+    const h = terrainHeights(f.terrain)
+    const deck = roadDeckHeights(f, h)
+    const ground = h[12]
+    expect(deck[12]).toBeGreaterThanOrEqual(ground + riverDepthForStage(1) + BRIDGE_CLEARANCE - 1e-6)
+    // the roads on the banks stay on the ground
+    expect(deck[11]).toBeCloseTo(h[11], 3)
+    const t = computeRoads(f, h)
+    const used = (cell: number) => t.kind.slice(cell * ROAD_SLOTS, (cell + 1) * ROAD_SLOTS).filter((k) => k >= 0).length
+    // pad + 2 arms + pier + 2 rails on each arm
+    expect(used(12)).toBe(1 + 2 + 1 + 4)
+    // a plain road cell has only its pad and arm
+    expect(used(11)).toBe(2)
+    // the deck pad sits at deck height, not down in the river
+    expect(t.pos[12 * ROAD_SLOTS * 3 + 1]).toBeGreaterThan(ground + riverDepthForStage(1))
   })
 
   it('house count and height follow structureLevel', () => {

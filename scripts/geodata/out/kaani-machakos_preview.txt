@@ -16,7 +16,7 @@ T,TT,,,,,T,,,,TTcccTHTTTTT,Tccc=,,cccccccc~,,,,,H,,,,,,,ccccc,=,
 ,,T,,,,,,,,,,,,T~,TTTTcTTc~T,,,=,,cccTccT~,,,,cc,,cc,,ccc,ccc,,=
 ,,,,,,,T,,T,,,,~,,,TTcccccc~~,,=,,,,TTc,T~c,,,c,,,,c,,cccc,,,,==
 T,,,T,,,,,,,~~~TTT,,TTTTTTT,~,,=c,,,TT,,,,~,,,cc,ccc,,cccc,,,,=,
-,TT,,T,,,,,,,,,,,TTTTcccc,c,,~~~~~~~TT,T,c~,,,cc,ccc,cccc,,cc===
+,TT,,T,,,,,,,,,,,TTTTcccc,c,,~==~~~~TT,T,c~,,,cc,ccc,cccc,,cc===
 ,,,,,,,,,,,,,,,,,,,,ccTTc,,,,,,==,TT~T,,,,~,,,,,,cc,c,cc,,,c===c
 ,,,T,,,,,,,,,,,,T,,,,,,TT,,,,,,,=,,c,~,T~~,,,,cc,,c,,,,,,,,=HH,c
 TT,,,,T,,,,,,,,,,,,,,c,T,,,,,,,,=,,,,~~~Tc,,,,ccc,cc,,,,,,,=c,==
@@ -34,13 +34,13 @@ TTTT,,,==,,,,,TT,,,cTT,,c=cc,cc====ccccc,~,,,,,cc,,ccc=cc,,c,,,,
 ,T,TT,,=,,,,,,TT,,c,,T,,,=cc,,cccc,==,,,,,~,,,cc,,,c,c=c,ccccc,,
 ,T,TTT,=,,,,,,,,,,,,,cc,,T=c,,ccccc,==c,,~,,,c,,,,,,,,=c,,cccc,c
 ,T,,TTT==,,,,,,,,,c,cTc~,,T=,,ccccTc==~~~c~~,,,,c,cc==ccc,,,,,,c
-,,,,,TT,==,,,,,,,,c,,TT,~,TT=,,,ccc,~~c,,,,,~,,ccc==cccccc,,,~cc
+,,,,,TT,==,,,,,,,,c,,TT,~,TT=,,,ccc,=~c,,,,,~,,ccc==cccccc,,,~cc
 ,,,,,,,,,=,,,,,,,,,,TT,,,~,,,=,,,ccc~=,,,,cc~,,cc=ccccc,ccccc~,,
 ,,,,,,,T==,,,,,,,T,Tcccc,,~,,=~~~,~~,=,,,ccc~T,,,=c,ccc,,ccc~,,,
 ,,,,,,,==,,,,,,,,TTT,,,,,,~~~~=c,~Tcc=,,,ccT,~,,,=c,ccc,,,c~,c,,
 ,,H,,,,=,,,,,,,,,T,,~~~~~~,,c~=c,,,,,==c,,c,,~,,,=cccc,c,,~,,cc,
 ,,,,,,==,,,,,,,,,T,,,,,,,,,cc~=T,,,,,,=H,,,TTT~~==,,,,c,,~,,,,cc
-,,=,====,,,,,,,HccH,,,,,,cccc~,=c,,c,,,=c,,,,,,=~,,,,cc,~,,,,,,c
+,,=,====,,,,,,,HccH,,,,,,cccc~,=c,,c,,,=c,,,,,,==,,,,cc,~,,,,,,c
 ,====,,,,,,T,,,cccHH=,,cccccc~T,=T,,,,c=ccc,c,==~~~,,cc~,ccccc,c
 ==,,,,,,,,,,,,,,,,,,,=,,ccccc~,,=c,,,,,=cc,T,,=,,,,~~cc~,cc,c,cc
 ==,,,,,,,,,,,,,,,c,,,=,,,ccc~,,,,=TT,,c=,,,c==,,cccc~~~,,,ccc,c,

@@ -18,6 +18,18 @@ export interface WorldFrame {
   stormIntensity: number
   /** Reservoir fill 0..1 (storage / capacity), or null when unknown. */
   reservoirFill: number | null
+  /**
+   * Season and weather the view is dressed for (ground colours, crops, sky). The live view
+   * follows the date in the top bar, which is the season about to be played, while `season`
+   * stays the one the layers describe. Unset means the same as `season` and `weather`.
+   */
+  lookSeason?: Season
+  lookWeather?: WeatherKind
+}
+
+/** What the view should look like: the season and weather it is dressed for. */
+export function lookOf(frame: Pick<WorldFrame, 'season' | 'weather' | 'lookSeason' | 'lookWeather'>): { season: Season; weather: WeatherKind } {
+  return { season: frame.lookSeason ?? frame.season, weather: frame.lookWeather ?? frame.weather }
 }
 
 /** True if any value of the array is non-zero. */
@@ -56,6 +68,10 @@ export function frameFromSim(sim: SimulationState): WorldFrame {
     weather: w?.kind ?? (sim.step > 0 ? lastHistory?.weather : undefined) ?? 'normal',
     stormIntensity: w?.stormIntensity ?? 1,
     reservoirFill: cap > 0 && Number.isFinite(sim.reservoirM3) ? Math.min(1, Math.max(0, sim.reservoirM3 / cap)) : null,
+    // dressed for the season on the date; a drought's parched land and haze linger into it,
+    // but a storm that has passed does not keep raining
+    lookSeason: sim.season,
+    lookWeather: w?.kind === 'drought' ? 'drought' : 'normal',
   }
 }
 

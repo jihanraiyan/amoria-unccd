@@ -4,7 +4,7 @@
 import { BufferAttribute, BufferGeometry } from 'three'
 import { coverCode, structureCode, type Terrain } from '../../simulation/types'
 import { sampleBilinear, type GridDims } from '../core/coords'
-import type { WorldFrame } from '../core/frame'
+import { lookOf, type WorldFrame } from '../core/frame'
 import { hash01 } from '../core/hash'
 import { PALETTE, clamp01, seasonDryness, surfaceColor } from '../core/palette'
 import { EROSION_VISUAL_REF } from '../core/visualRefs'
@@ -116,7 +116,8 @@ export function computeCellColors(frame: WorldFrame, out?: Float32Array, colorbl
     if (e > eHi) eHi = e
   }
   const eSpan = eHi > eLo ? eHi - eLo : 1
-  const dryness = seasonDryness(frame.season, frame.weather)
+  const look = lookOf(frame)
+  const dryness = seasonDryness(look.season, look.weather)
   for (let i = 0; i < n; i++) {
     const cover = terrain.channel[i] ? WATER : layers.cover[i]
     const c = surfaceColor({
@@ -128,7 +129,8 @@ export function computeCellColors(frame: WorldFrame, out?: Float32Array, colorbl
       slope: terrain.slope[i],
       elevationNorm: (terrain.elevationM[i] - eLo) / eSpan,
       dryness,
-      isRoad: layers.structure[i] === ROAD,
+      // a bridge spans the water; the river bed under it is not paved
+      isRoad: layers.structure[i] === ROAD && cover !== WATER,
       colorblind,
     })
     res[i * 3] = c[0]

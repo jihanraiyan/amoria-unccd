@@ -259,7 +259,7 @@ describe('round 4 fixes mounted for real', () => {
     useGame.setState({ overlay: 'none', reducedMotion: false, quality: 'high', colorblind: false })
     const frame = frameFromSim(sim)
     // heavy rain pulls the fog in closest
-    const rainy: WorldFrame = { ...frame, season: 'wet', weather: 'heavy-rain' }
+    const rainy: WorldFrame = { ...frame, season: 'wet', weather: 'heavy-rain', lookSeason: 'wet', lookWeather: 'heavy-rain' }
     const view = await mount(<WorldRenderer frame={rainy} sourceKey="live" quality="high" />)
     frames(3)
     const veg = (find('vegetation') as Object3D).children[0] as InstancedMesh

@@ -315,7 +315,8 @@ def build_settlement(observed: np.ndarray, built_frac: np.ndarray, channel: np.n
                      region: Region) -> Settlement:
     n = observed.shape[0]
     cover = observed.copy()
-    # Channels and off-network water bodies are both open water: no houses or roads.
+    # Channels and off-network water bodies are both open water: no houses. A road that
+    # crosses them stays on the map as a bridge: the cell keeps its water cover.
     wet = (channel == 1) | (observed == COVER["water"])
     urban_rule = (built_frac >= region.urban_min_built_frac) & (observed != COVER["urban"]) & ~wet
     cover[urban_rule] = COVER["urban"]
@@ -325,7 +326,7 @@ def build_settlement(observed: np.ndarray, built_frac: np.ndarray, channel: np.n
     # Dense built-up cells stay housing even where a road crosses them; the road
     # is read as a street between the houses and still counts for connectivity.
     dense = urban & (built_frac >= region.housing_over_road_built_frac)
-    road_source = np.where((osm_main == 1) & ~wet & ~dense, ROAD_OSM_MAIN, ROAD_NONE).astype(np.uint8)
+    road_source = np.where((osm_main == 1) & ~dense, ROAD_OSM_MAIN, ROAD_NONE).astype(np.uint8)
     streets = (osm_main == 1) & dense
 
     clusters = [c for c in _components(urban & (road_source == 0)) if len(c) >= region.connector_min_cluster]
@@ -333,25 +334,29 @@ def build_settlement(observed: np.ndarray, built_frac: np.ndarray, channel: np.n
     # Link every settlement cluster to a road that leaves the map. Prefer the
     # OSM minor road network (cheap to travel along); only where it has gaps
     # does the path cross open land, and those cells are flagged synthetic.
+    # Water is expensive to cross, and where the path still crosses it, it bridges it.
     cost = (np.where(osm_minor == 1, 1.0, 20.0) + 25.0 * slope + np.where(wet, 60.0, 0.0))
     flat_edge = _edge_mask(n).ravel()
     for cluster in sorted(clusters, key=len, reverse=True):
-        reachable = _edge_connected((road_source > 0) | streets)
+        # Reachability leaves the bridges out, so a hamlet keeps the OSM minor road that links
+        # it on its own bank instead of being counted as served by a detour over a bridge.
+        reachable = _edge_connected(((road_source > 0) & ~wet) | streets)
         if _touches(cluster, reachable, n):
             continue
         targets = reachable or set(np.flatnonzero(flat_edge).tolist())
         members = set(cluster)
         for i in _least_cost_path(members, targets, cost):
             z, x = divmod(i, n)
-            if i in members or wet[z, x] or road_source[z, x] or urban[z, x]:
+            if i in members or road_source[z, x] or urban[z, x]:
                 continue
             road_source[z, x] = ROAD_OSM_MINOR if osm_minor[z, x] else ROAD_SYNTHETIC
 
     structure = np.zeros((n, n), dtype=np.uint8)
     level = np.zeros((n, n), dtype=np.uint8)
     roads = road_source > 0
+    bridges = roads & wet
     structure[roads] = STRUCT["road"]
-    cover[roads] = COVER["urban"]
+    cover[roads & ~wet] = COVER["urban"]
     houses = (cover == COVER["urban"]) & ~roads
     structure[houses] = STRUCT["housing"]
     level[houses] = np.where(built_frac[houses] >= 0.7, 3, np.where(built_frac[houses] >= 0.4, 2, 1))
@@ -366,6 +371,7 @@ def build_settlement(observed: np.ndarray, built_frac: np.ndarray, channel: np.n
             "osmMinorLink": int((road_source == ROAD_OSM_MINOR).sum()),
             "synthetic": int((road_source == ROAD_SYNTHETIC).sum()),
             "streetCellsKeptAsHousing": int(streets.sum()),
+            "bridges": int(bridges.sum()),
         },
         clusters=clusters,
     )

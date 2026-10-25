@@ -47,6 +47,8 @@ export const PALETTE = {
   skirtBottom: linear('#4f3a2a'),
   roadSurface: linear('#a39582'),
   roadEdge: linear('#7d6f5e'),
+  bridgeDeck: linear('#8a6a4a'),
+  bridgeRail: linear('#9a948a'),
   terraceRidge: linear('#7b5a3a'),
   irrigation: linear('#5f9fa8'),
   bark: linear('#6b4a32'),
