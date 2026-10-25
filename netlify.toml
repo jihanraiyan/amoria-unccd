@@ -1,0 +1,13 @@
+# Static single-page app. Netlify runs the build and serves dist/.
+[build]
+  command = "npm run build"
+  publish = "dist"
+
+[build.environment]
+  NODE_VERSION = "22"
+
+# Every unknown path falls back to the app shell (files in dist/ are served first).
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200

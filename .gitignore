@@ -1,0 +1,10 @@
+node_modules
+dist
+.DS_Store
+scripts/geodata/.venv
+scripts/geodata/cache
+*.local
+*.tsbuildinfo
+.pytest_cache/
+.ruff_cache/
+__pycache__/

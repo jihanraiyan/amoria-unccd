@@ -1,0 +1,10 @@
+{
+  "worlds": [
+    {
+      "id": "kaani-machakos",
+      "name": "Kaani, Machakos County (Kenya)",
+      "kind": "real-data-derived",
+      "file": "kaani-machakos.json"
+    }
+  ]
+}

@@ -1,0 +1,314 @@
+@import 'tailwindcss';
+
+/*
+  Amoria interface. Art direction: a field journal laid over a living valley.
+  Warm umber glass panels, cream ink, marigold and terracotta accents, river teal.
+  Fraunces (display, soft serif with character) + Figtree (readable UI text).
+*/
+
+@theme {
+  --font-display: 'Fraunces Variable', 'Iowan Old Style', Georgia, serif;
+  --font-sans: 'Figtree Variable', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
+
+  --color-ink: #17120d;
+  --color-umber: #241c15;
+  --color-bark: #3a2d22;
+  --color-cream: #f7eedc;
+  --color-parchment: #efe1c5;
+  --color-muted: #d3c3a8;
+  --color-dim: #b8a88f;
+  --color-marigold: #f4ae3f;
+  --color-terracotta: #e2734d;
+  /* terracotta lightened for small text, so it stays above 4.5:1 on panels over the brightest sky */
+  --color-ember: #ec8a66;
+  --color-sage: #a3c98f;
+  --color-moss: #5f8a4f;
+  --color-river: #63c6cf;
+  --color-plum: #8a5a7a;
+
+  --radius-pebble: 16px;
+  --shadow-float: 0 8px 32px -8px rgb(0 0 0 / 0.5), 0 4px 16px -4px rgb(0 0 0 / 0.4);
+}
+
+@theme inline {
+  --color-good: var(--status-good);
+  --color-warn: var(--status-warn);
+  --color-bad: var(--status-bad);
+  --color-info: var(--status-info);
+}
+
+:root {
+  --status-good: #a3d18c;
+  --status-warn: #f4ae3f;
+  --status-bad: #f2735f;
+  --status-info: #7fcfd8;
+  /* Near-opaque islands keep small dim and status text above WCAG AA 4.5:1 over pale fog or sky.
+     tests/ui/round7.test.tsx guards this. */
+  --panel-bg: rgb(27 21 16 / 0.97);
+  --panel-bg-strong: rgb(22 17 13 / 0.98);
+  --panel-line: rgb(247 238 220 / 0.1);
+  --ui-scale: 1;
+  color-scheme: dark;
+}
+
+/* Colorblind-safe palette: blue for good, orange for caution, vermillion-magenta for bad. */
+:root[data-colorblind='true'] {
+  --status-good: #6fb6ff;
+  --status-warn: #ffb000;
+  --status-bad: #ff5fa2;
+  --status-info: #c7b4ff;
+}
+
+html {
+  font-size: calc(16px * var(--ui-scale));
+}
+
+html,
+body,
+#root {
+  height: 100%;
+  margin: 0;
+}
+
+body {
+  background: var(--color-ink);
+  color: var(--color-cream);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  overflow: hidden;
+}
+
+.font-display {
+  font-family: var(--font-display);
+  font-variation-settings: 'SOFT' 0, 'WONK' 0;
+}
+
+.tabular {
+  font-variant-numeric: tabular-nums;
+}
+
+@layer components {
+  .panel {
+    background: var(--panel-bg);
+    border: 1px solid var(--panel-line);
+    border-radius: var(--radius-pebble);
+    box-shadow: var(--shadow-float);
+  }
+  .panel-strong {
+    background: var(--panel-bg-strong);
+  }
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.4rem;
+    border-radius: 10px;
+    padding: 0.45rem 0.8rem;
+    font-weight: 600;
+    font-size: 0.875rem;
+    line-height: 1.1;
+    border: 1px solid var(--panel-line);
+    background: rgb(247 238 220 / 0.06);
+    color: var(--color-cream);
+    transition: background 120ms ease, border-color 120ms ease, transform 120ms ease;
+    cursor: pointer;
+  }
+  .btn:hover:not(:disabled) {
+    background: rgb(247 238 220 / 0.13);
+    border-color: rgb(247 238 220 / 0.25);
+  }
+  .btn:active:not(:disabled) {
+    transform: translateY(1px);
+  }
+  .btn:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+  }
+  .btn-primary {
+    background: var(--color-cream);
+    color: var(--color-ink);
+    border-color: transparent;
+  }
+  .btn-primary:hover:not(:disabled) {
+    background: #fff8ea;
+    border-color: transparent;
+  }
+  .btn-ghost {
+    background: transparent;
+    border-color: transparent;
+  }
+  .btn-icon {
+    padding: 0.45rem;
+  }
+  .chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    border-radius: 999px;
+    padding: 0.15rem 0.55rem;
+    font-size: 0.75rem;
+    font-weight: 600;
+    background: rgb(247 238 220 / 0.08);
+    border: 1px solid var(--panel-line);
+  }
+  /* square icon buttons for the rails and the tool dock; the active one inverts */
+  .rail-btn {
+    position: relative;
+    display: inline-flex;
+    flex-shrink: 0;
+    align-items: center;
+    justify-content: center;
+    width: 2.5rem;
+    height: 2.5rem;
+    border-radius: 12px;
+    color: var(--color-muted);
+    transition: background 120ms ease, color 120ms ease;
+    cursor: pointer;
+  }
+  .rail-btn:hover:not(:disabled):not([aria-disabled='true']) {
+    color: var(--color-cream);
+    background: rgb(247 238 220 / 0.1);
+  }
+  .rail-btn:disabled,
+  .rail-btn[aria-disabled='true'] {
+    opacity: 0.4;
+    cursor: not-allowed;
+  }
+  .rail-btn-active,
+  .rail-btn-active:hover:not(:disabled) {
+    color: var(--color-ink);
+    background: var(--color-cream);
+  }
+  .rail-sep {
+    flex-shrink: 0;
+    background: var(--panel-line);
+  }
+  .kbd {
+    display: inline-flex;
+    min-width: 1.35em;
+    justify-content: center;
+    border-radius: 5px;
+    padding: 0 0.3em;
+    font-size: 0.7rem;
+    font-weight: 700;
+    line-height: 1.5;
+    color: var(--color-parchment);
+    background: rgb(247 238 220 / 0.1);
+    border: 1px solid rgb(247 238 220 / 0.2);
+    border-bottom-width: 2px;
+  }
+  .eyebrow {
+    font-size: 0.68rem;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    font-weight: 600;
+    color: var(--color-dim);
+  }
+  .field {
+    width: 100%;
+    border-radius: 10px;
+    padding: 0.5rem 0.65rem;
+    background: rgb(0 0 0 / 0.25);
+    border: 1px solid var(--panel-line);
+    color: var(--color-cream);
+    font: inherit;
+  }
+  .scroll-soft {
+    scrollbar-width: thin;
+    scrollbar-color: rgb(247 238 220 / 0.25) transparent;
+  }
+}
+
+:focus-visible {
+  outline: 3px solid var(--color-marigold);
+  outline-offset: 2px;
+  border-radius: 8px;
+}
+
+/* visually hidden inputs (world picker radios) show focus on the card that holds them */
+label:has(> input.sr-only:focus-visible) {
+  outline: 3px solid var(--color-marigold);
+  outline-offset: 2px;
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+@keyframes rise-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+.anim-rise {
+  animation: rise-in 260ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+.anim-fade {
+  animation: fade-in 400ms ease both;
+}
+
+:root[data-reduced-motion='true'] *,
+:root[data-reduced-motion='true'] *::before,
+:root[data-reduced-motion='true'] *::after {
+  animation-duration: 0.001ms !important;
+  animation-iteration-count: 1 !important;
+  transition-duration: 0.001ms !important;
+  scroll-behavior: auto !important;
+}
+
+/* range inputs styled to match the journal look */
+input[type='range'].slider {
+  -webkit-appearance: none;
+  appearance: none;
+  background: transparent;
+  width: 100%;
+  height: 1.4rem;
+  cursor: pointer;
+}
+input[type='range'].slider::-webkit-slider-runnable-track {
+  height: 6px;
+  border-radius: 999px;
+  background: rgb(247 238 220 / 0.18);
+}
+input[type='range'].slider::-moz-range-track {
+  height: 6px;
+  border-radius: 999px;
+  background: rgb(247 238 220 / 0.18);
+}
+input[type='range'].slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 16px;
+  height: 16px;
+  margin-top: -5px;
+  border-radius: 50%;
+  background: var(--color-marigold);
+  border: 2px solid #2a1a07;
+}
+input[type='range'].slider::-moz-range-thumb {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: var(--color-marigold);
+  border: 2px solid #2a1a07;
+}

@@ -1,0 +1,13 @@
+// Public surface of the simulation core.
+export * from './types'
+export { createInitialState, validateAction, applyAction, step, advance, engine, referenceSeason, MAX_EXPLANATIONS, type CreateOptions } from './engine'
+export { replay, branchAt, actionLog, type LoggedAction } from './engine/replay'
+export { serializeState, deserializeState } from './engine/serialize'
+export { makeSnapshot, makeHistoryPoint } from './engine/history'
+export { evaluateObjectives, endReport, type ObjectiveStatus, type EndReport } from './scenarios/guided'
+export { generateWeather, summarizeWeather } from './events/weather'
+export { generateProceduralWorld, riverX } from './world/procedural'
+export { PARAM_GROUPS, listParameters, WELLBEING_WEIGHTS } from './params'
+export { LIMITS as PLACEMENT_LIMITS, irrigationReachable } from './models/landUse'
+export { erosionSusceptibility, floodExposure, environmentalSensitivity, productivity, urbanIntensity } from './derived/overlays'
+export { inspectCell, type CellReport, type InterventionOption } from './derived/inspect'
