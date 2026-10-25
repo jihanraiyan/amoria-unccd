@@ -398,6 +398,12 @@ export const ECON = {
   ),
 }
 
+// ---------------------------------------------------------------- drinking-water quality
+export const WATER_QUALITY = gb(
+  { safeConc: 15, failConc: 80, maxUnsafeShare: 0.4 },
+  'Muddy intakes make piped water unsafe. The waterworks clean water carrying up to 15 t of sediment per 1000 m3; above that the unsafe share of piped water rises linearly to 40% at 80 t per 1000 m3. Safe household water = roof tanks and wells + piped water x (1 - unsafe share), so erosion upstream lowers household water security. Game-balance thresholds, not a treatment-plant design.',
+)
+
 // ---------------------------------------------------------------- placement rules
 export const PLACEMENT = {
   roadSlope: gb(0.3, 'Roads cannot be built on slopes above 30%.'),
@@ -516,7 +522,7 @@ export const OBJECTIVES = gb(
 )
 
 /** Registry of every parameter group for docs and the in-game "model assumptions" panel. */
-export const PARAM_GROUPS = { TIME, CLIMATE, DEMOGRAPHY, HYDRO, SOIL, VEG, AGRI, ECON, PLACEMENT, COMMUNITY, CALIBRATION, SPINUP, WELLBEING_WEIGHTS, OBJECTIVES }
+export const PARAM_GROUPS = { TIME, CLIMATE, DEMOGRAPHY, HYDRO, SOIL, VEG, AGRI, ECON, WATER_QUALITY, PLACEMENT, COMMUNITY, CALIBRATION, SPINUP, WELLBEING_WEIGHTS, OBJECTIVES }
 
 /** Flat list of every parameter with its group, key, tag and note. */
 export function listParameters(): { group: string; key: string; evidence: Evidence; note: string }[] {

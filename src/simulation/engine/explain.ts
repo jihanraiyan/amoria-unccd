@@ -239,6 +239,7 @@ function explainWater(ctx: Ctx): void {
     { label: 'Piped from the waterworks', after: r0(h.townSuppliedM3), unit: 'm³' },
     { label: 'Roof tanks and shallow wells', after: r0(h.selfSuppliedM3), unit: 'm³' },
     { label: 'River flow at intakes', after: r0(h.intakeFlowM3), unit: 'm³' },
+    { label: 'Piped water safe to drink', before: r2(prev.community.waterQuality ?? 1), after: r2(next.community.waterQuality ?? 1) },
     { label: 'Reservoir storage', before: r0(prev.reservoirM3), after: r0(next.reservoirM3), unit: 'm³' },
     { label: 'Rainfall', before: w.normalRainfallMm, after: w.rainfallMm, unit: 'mm' },
   ]
@@ -250,6 +251,8 @@ function explainWater(ctx: Ctx): void {
     if (h.intakeFlowM3 > 0 && h.townSuppliedM3 + h.irrigationSuppliedM3 >= 0.98 * HYDRO.envFlowLimit.value * h.intakeFlowM3)
       reasons.push(`the river at the intake carried only ${num(h.intakeFlowM3)} m³ and at most ${pct(HYDRO.envFlowLimit.value)} may be taken to keep the river alive`)
     if (capM3 > 0 && h.townSuppliedM3 >= 0.98 * capM3) reasons.push(`waterworks capacity (${num(capM3)} m³ a season) is fully used`)
+    const wq = next.community.waterQuality ?? 1
+    if (wq < 0.99) reasons.push(`sediment from eroding land upstream made the river at the intakes so muddy that ${pct(1 - wq)} of the piped water was not safe to drink`)
     if (prev.economy.serviceLevel < 1) reasons.push(`budget shortages cut waterworks operation to ${pct(prev.economy.serviceLevel)}`)
     if (next.totals.reservoirCapacityM3 > 0 && next.reservoirM3 < 0.05 * next.totals.reservoirCapacityM3) reasons.push('the reservoir is empty')
     if (w.kind === 'drought') {
@@ -262,7 +265,7 @@ function explainWater(ctx: Ctx): void {
       topic: 'water',
       severity: ws1 < 0.7 ? 'critical' : 'warning',
       title: `Households got ${pct(ws1)} of their water`,
-      body: `Households got ${num(h.householdSuppliedM3)} of the ${num(h.townDemandM3)} m³ they needed (${num(h.townSuppliedM3)} piped, ${num(h.selfSuppliedM3)} from roof tanks and shallow wells)${reasons.length ? ` because ${reasons.join('; ')}` : ''}. Options: more waterworks capacity, a reservoir to store wet-season water, or land that keeps more water in the ground.`,
+      body: `Households got ${pct(ws1)} of the ${num(h.townDemandM3)} m³ of safe water they needed (${num(h.householdSuppliedM3)} m³ supplied: ${num(h.townSuppliedM3)} piped, ${num(h.selfSuppliedM3)} from roof tanks and shallow wells)${reasons.length ? ` because ${reasons.join('; ')}` : ''}. Options: more waterworks capacity, a reservoir to store wet-season water, land that keeps more water in the ground, or trees, terraces and wetlands upstream to keep soil out of the river.`,
       evidence: evd,
     })
   } else if (ws0 < 0.95) {

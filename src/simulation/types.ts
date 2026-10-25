@@ -180,6 +180,8 @@ export interface Community {
   housingAdequacy: number
   foodSecurity: number
   waterSecurity: number
+  /** Share of piped water safe to drink after treatment (muddy intakes lower it). Optional for older saves. */
+  waterQuality?: number
   livelihood: number
   hazardExposure: number
   wellbeing: number

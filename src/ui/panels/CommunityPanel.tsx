@@ -109,6 +109,7 @@ export function CommunityPanel() {
         <Meter label="Housing adequacy" value={c.housingAdequacy} tone={band(c.housingAdequacy)} />
         <Meter label="Food security" value={c.foodSecurity} tone={band(c.foodSecurity)} />
         <Meter label="Water security" value={c.waterSecurity} tone={band(c.waterSecurity)} />
+        <Meter label="Piped water safe to drink" value={c.waterQuality ?? 1} tone={band(c.waterQuality ?? 1)} />
         <Meter label="Livelihoods" value={c.livelihood} tone={band(c.livelihood)} />
         <Meter label="Exposure to floods and drought (lower is better)" value={c.hazardExposure} tone={c.hazardExposure > 0.4 ? 'bad' : c.hazardExposure > 0.15 ? 'warn' : 'good'} />
       </Section>

@@ -26,6 +26,7 @@ import { runHydrology, type HydrologyOutput } from '../models/hydrology'
 import { contouringP, runOnFactor, runSoil, type SoilOutput } from '../models/soil'
 import { maturity, runVegetation } from '../models/vegetation'
 import { grazingPressure } from '../models/grazing'
+import { intakeSedimentConc, pipedWaterQuality } from '../models/waterQuality'
 
 export interface SeasonOutcome {
   layers: WorldLayers
@@ -233,7 +234,8 @@ export function simulateSeason(state: SimulationState, w: WeatherSeason, d: Demo
   let intakeSed = 0
   for (const c of new Set(hydro.intakeCells)) intakeSed += soil.sedimentFlux[c]
   const tb = ECON.turbidity.value
-  const conc = hydro.intakeFlowM3 > 0 ? intakeSed / (hydro.intakeFlowM3 / 1000) : 0
+  const conc = intakeSedimentConc(intakeSed, hydro.intakeFlowM3)
+  const waterQuality = pipedWaterQuality(conc)
   const intakeTurbidity = 1 + Math.min(tb.max, tb.costPerTPer1000M3 * conc)
 
   // 6. economy
@@ -296,6 +298,7 @@ export function simulateSeason(state: SimulationState, w: WeatherSeason, d: Demo
     townDemandM3: hydro.townDemandM3,
     townSuppliedM3: hydro.householdSuppliedM3,
     selfSuppliedM3: hydro.selfSuppliedM3,
+    waterQuality,
     waterworks: countStructure(L3, S.waterworks),
     householdScale: cal.householdScale,
     // farm and herding income smoothed over the two-season window (households live on a yearly harvest)

@@ -59,6 +59,8 @@ export interface CommunityInput {
   townSuppliedM3: number
   /** Part of townSuppliedM3 that came from roof tanks and wells, m3. */
   selfSuppliedM3?: number
+  /** Share of piped water safe to drink after treatment, 0..1 (models/waterQuality). Missing means clean. */
+  waterQuality?: number
   /** Waterworks in the valley (for the townspeople note). */
   waterworks?: number
   /** Residents per home cell multiplier (per-map calibration). */
@@ -106,7 +108,11 @@ export function runCommunity(input: CommunityInput): CommunityOutput {
   // households pay for bought food out of their income; the window covers two seasons, so one
   // season pays for half of the window's purchases
   const foodImportCost = 0.5 * imported * imp.pricePerT
-  const waterSecurity = input.townDemandM3 > 0 ? clamp(input.townSuppliedM3 / input.townDemandM3, 0, 1) : 1
+  // only safe water counts: piped water from muddy intakes is partly unusable, wells are not affected
+  const waterQuality = clamp(input.waterQuality ?? 1, 0, 1)
+  const pipedM3 = Math.max(0, input.townSuppliedM3 - (input.selfSuppliedM3 ?? 0))
+  const safeM3 = input.townSuppliedM3 - pipedM3 * (1 - waterQuality)
+  const waterSecurity = input.townDemandM3 > 0 ? clamp(safeM3 / input.townDemandM3, 0, 1) : 1
 
   const employment = labor0 > 0 ? clamp(jobs.total / labor0, 0, 1) : 1
   const nonFarmFilled = Math.min(jobs.nonFarm, Math.max(0, labor0 - Math.min(jobs.farm, labor0)))
@@ -180,6 +186,7 @@ export function runCommunity(input: CommunityInput): CommunityOutput {
       housingAdequacy,
       foodSecurity,
       waterSecurity,
+      waterQuality,
       livelihood,
       hazardExposure,
       wellbeing,
