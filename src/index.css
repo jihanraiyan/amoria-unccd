@@ -94,6 +94,15 @@ body {
     border-radius: var(--radius-pebble);
     box-shadow: var(--shadow-float);
   }
+  /* frosted island for text laid straight over the 3D world (the title screen) */
+  .glass {
+    background: rgb(23 18 13 / 0.68);
+    border: 1px solid rgb(247 238 220 / 0.14);
+    border-radius: 20px;
+    box-shadow: var(--shadow-float);
+    backdrop-filter: blur(18px) saturate(1.1);
+    -webkit-backdrop-filter: blur(18px) saturate(1.1);
+  }
   .panel-strong {
     background: var(--panel-bg-strong);
   }

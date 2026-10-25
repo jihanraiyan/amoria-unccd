@@ -1,6 +1,7 @@
-// Title screen over the live 3D valley.
-import { ArrowRight, BookOpen, Globe2, Map as MapIcon, Play, Sprout } from 'lucide-react'
-import { Suspense, useEffect, useState } from 'react'
+// Title screen: a short centred column over the live 3D valley. Name, place, start; the rest
+// sits behind three small links.
+import { ArrowRight } from 'lucide-react'
+import { Suspense, useEffect, useState, type ReactNode } from 'react'
 import { CanvasBoundary } from '../../app/ErrorBoundary'
 import { useGameExports } from '../../app/gameModules'
 import { useGame } from '../../state/store'
@@ -30,69 +31,75 @@ export function worldSummary(meta: WorldMeta): string {
   return `Real hills, farms and roads of ${meta.name}${sources.length ? `, from ${joinList(sources)}` : ''}. Game numbers are illustrative.`
 }
 
+/** The picked map's longer notes: climate caveat, description and where the data comes from. */
 function MapDetails({ meta }: { meta: WorldMeta }) {
+  const climate = genericClimateNote(meta)
   return (
-    <details className="mt-1 text-xs">
-      <summary className="cursor-pointer text-dim hover:text-cream">Map details: {meta.name}</summary>
-      <p className="mt-1 leading-snug text-muted">{meta.description}</p>
-      <p className="mt-1 leading-snug text-dim">{meta.provenance}</p>
+    <details className="mt-2 text-xs">
+      <summary className="cursor-pointer list-none text-muted underline-offset-2 hover:text-cream hover:underline focus-visible:text-cream focus-visible:underline focus-visible:outline-none [&::-webkit-details-marker]:hidden">
+        Map details: {meta.name}
+      </summary>
+      <div className="mt-2 space-y-1.5 rounded-xl bg-black/25 p-3 text-left leading-snug">
+        {climate && (
+          <p className="text-parchment" data-testid="world-climate-note">
+            {climate}
+          </p>
+        )}
+        <p className="text-muted">{meta.description}</p>
+        <p className="text-dim">{meta.provenance}</p>
+      </div>
     </details>
   )
 }
 
-function WorldCard({ w, checked, onChange }: { w: WorldEntry; checked: boolean; onChange(id: string): void }) {
+/** One option of the place switch: the name, and whether it is real or made up. */
+function WorldOption({ w, checked, onChange }: { w: WorldEntry; checked: boolean; onChange(id: string): void }) {
   const real = w.meta.kind === 'real-data-derived'
-  const Icon = real ? Globe2 : MapIcon
   const nameId = `world-${w.meta.id}-name`
-  const lineId = `world-${w.meta.id}-line`
-  const climate = genericClimateNote(w.meta)
   return (
-    <div
-      className={`rounded-xl border p-3 transition-colors has-[:focus-visible]:outline-3 has-[:focus-visible]:outline-offset-2 has-[:focus-visible]:outline-marigold ${
-        checked ? 'border-marigold bg-marigold/10' : 'border-[var(--panel-line)] bg-black/20 hover:bg-white/5'
+    <label
+      className={`flex cursor-pointer flex-col items-center rounded-[10px] px-3 py-2 text-center transition-colors has-[:focus-visible]:outline-3 has-[:focus-visible]:outline-offset-2 has-[:focus-visible]:outline-marigold ${
+        checked ? 'bg-cream text-ink' : 'text-parchment hover:bg-white/5'
       }`}
     >
-      <label className="flex cursor-pointer gap-3">
-        <input
-          type="radio"
-          name="world"
-          className="sr-only"
-          checked={checked}
-          onChange={() => onChange(w.meta.id)}
-          aria-labelledby={nameId}
-          aria-describedby={lineId}
-        />
-        <Icon size={20} className="mt-0.5 shrink-0 text-marigold" aria-hidden />
-        <span className="min-w-0">
-          <span className="flex flex-wrap items-center gap-2">
-            <span id={nameId} className="font-display text-base font-semibold">
-              {w.meta.name}
-            </span>
-            <span className={`chip !py-0 text-[0.68rem] ${real ? 'text-river' : 'text-dim'}`}>{real ? 'Built from real map data' : 'Fictional valley'}</span>
-          </span>
-          <span id={lineId} className="mt-0.5 block text-xs leading-snug text-muted">
-            {worldSummary(w.meta)}
-            {climate && <span className="mt-1 block text-[0.7rem] text-parchment" data-testid="world-climate-note">{climate}</span>}
-          </span>
-        </span>
-      </label>
-      <div className="pl-8">
-        <MapDetails meta={w.meta} />
-      </div>
-    </div>
+      <input type="radio" name="world" className="sr-only" checked={checked} onChange={() => onChange(w.meta.id)} aria-labelledby={nameId} aria-describedby="world-line" />
+      <span id={nameId} className="text-sm font-semibold">
+        {w.meta.name}
+      </span>
+      <span className={`text-[0.7rem] ${checked ? 'text-ink/70' : 'text-muted'}`}>{real ? 'Built from real map data' : 'Fictional valley'}</span>
+    </label>
   )
 }
 
+/** The place switch and one line about the picked place. */
 function WorldPicker({ worlds, value, onChange }: { worlds: WorldEntry[]; value: string; onChange(id: string): void }) {
+  const picked = worlds.find((w) => w.meta.id === value) ?? worlds[0]
   return (
-    <fieldset className="mt-4">
-      <legend className="eyebrow mb-1.5">Choose a place</legend>
-      <div className="grid gap-2" role="radiogroup">
+    <fieldset className="w-full">
+      <legend className="sr-only">Choose a place</legend>
+      <div className="grid gap-1 rounded-xl bg-black/30 p-1" style={{ gridTemplateColumns: `repeat(${worlds.length}, minmax(0, 1fr))` }} role="radiogroup">
         {worlds.map((w) => (
-          <WorldCard key={w.meta.id} w={w} checked={value === w.meta.id} onChange={onChange} />
+          <WorldOption key={w.meta.id} w={w} checked={value === w.meta.id} onChange={onChange} />
         ))}
       </div>
+      {picked && (
+        <div className="mt-3 text-[0.8rem] leading-snug text-parchment">
+          <p id="world-line">{worldSummary(picked.meta)}</p>
+          <MapDetails meta={picked.meta} />
+        </div>
+      )}
     </fieldset>
+  )
+}
+
+type Extra = 'how' | 'seed' | 'about'
+
+/** Content behind one of the small links. Always mounted, so the seed field keeps its value. */
+function ExtraPanel({ id, open, children }: { id: Extra; open: Extra | null; children: ReactNode }) {
+  return (
+    <div id={`extra-${id}`} hidden={open !== id} className="mt-3 w-full rounded-xl bg-black/25 p-4 text-left">
+      {children}
+    </div>
   )
 }
 
@@ -105,9 +112,9 @@ export function Landing() {
   const game = useGameExports()
   const [worlds, setWorlds] = useState<WorldEntry[]>([])
   const [worldId, setWorldId] = useState<string | null>(null)
-  const [howTo, setHowTo] = useState(false)
   const [seedText, setSeedText] = useState('')
   const [confirmNew, setConfirmNew] = useState(false)
+  const [extra, setExtra] = useState<Extra | null>(null)
 
   useEffect(() => {
     let alive = true
@@ -137,6 +144,12 @@ export function Landing() {
   const shownId = worldId ?? PROCEDURAL_WORLD_ID
   const selectedReal = worlds.find((w) => w.meta.id === shownId && w.meta.kind === 'real-data-derived')?.meta.id ?? null
 
+  const links: { id: Extra; label: string }[] = [
+    { id: 'how', label: 'How to play' },
+    { id: 'seed', label: 'Classroom seed' },
+    { id: 'about', label: 'About' },
+  ]
+
   return (
     <main className="relative h-full w-full overflow-hidden" aria-labelledby="title">
       <div className="absolute inset-0" aria-hidden>
@@ -148,118 +161,118 @@ export function Landing() {
           </CanvasBoundary>
         )}
       </div>
-      <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(90deg,rgb(23_18_13/0.92)_0%,rgb(23_18_13/0.72)_38%,rgb(23_18_13/0.05)_75%)]" />
+      <div className="pointer-events-none absolute inset-0 bg-ink/20" aria-hidden />
 
-      <div className="scroll-soft relative flex h-full flex-col overflow-y-auto px-6 py-8 sm:px-12 lg:w-[38rem]">
-        <div className="anim-fade flex items-center gap-2 text-marigold">
-          <Sprout size={22} aria-hidden />
-          <span className="eyebrow !text-marigold">A watershed city-builder</span>
-        </div>
-        <h1 id="title" className="font-display anim-rise mt-3 text-7xl leading-none font-semibold tracking-tight italic sm:text-8xl">
-          Amoria
-        </h1>
-        <p className="font-display anim-rise mt-3 text-2xl text-parchment">Build a city. Shape an ecosystem.</p>
-        <p className="anim-rise mt-4 max-w-md text-base leading-relaxed text-muted">
-          A small town in a dry river valley needs homes, food, water and work. Every road, field and forest you place changes where the rain goes, how the soil holds up and
-          who does well when the drought comes. Play twenty years and find out what your plan really did.
-        </p>
+      <div className="scroll-soft relative flex h-full flex-col items-center overflow-y-auto px-4">
+        <div className="glass anim-fade my-auto flex w-full max-w-md flex-col items-center px-6 py-8 text-center sm:px-8">
+          <h1 id="title" className="text-5xl leading-none font-semibold tracking-tight sm:text-6xl">
+            Amoria
+          </h1>
+          <p className="mt-3 text-lg text-parchment">Build a city. Shape an ecosystem.</p>
 
-        <div className="mt-6 flex flex-wrap gap-2">
-          <button type="button" className="btn btn-primary !px-5 !py-3 !text-base" onClick={start} disabled={busy || !seedValid}>
-            <Play size={18} aria-hidden /> {confirmNew ? 'Yes, start a new valley' : 'Start building'}
-          </button>
-          {hasSave && (
-            <button type="button" className="btn !px-5 !py-3 !text-base" onClick={() => void continueGame()} disabled={busy}>
-              Continue <ArrowRight size={18} aria-hidden />
+          <div className="mt-7 w-full">
+            {worlds.length > 1 && <WorldPicker worlds={worlds} value={worldId ?? PROCEDURAL_WORLD_ID} onChange={setWorldId} />}
+            {worlds.length === 1 && (
+              <div className="text-[0.8rem] leading-snug text-parchment">
+                <p>
+                  <strong className="text-cream">{worlds[0].meta.name}:</strong> {worldSummary(worlds[0].meta)}
+                </p>
+                <MapDetails meta={worlds[0].meta} />
+              </div>
+            )}
+          </div>
+
+          <div className="mt-6 flex w-full flex-col gap-2">
+            <button type="button" className="btn btn-primary w-full !py-3 !text-base" onClick={start} disabled={busy || !seedValid}>
+              {confirmNew ? 'Yes, start a new valley' : 'Start building'}
             </button>
-          )}
-        </div>
-        {confirmNew && (
-          <p className="mt-2 text-sm text-warn" role="alert">
-            Starting over replaces your saved game in this browser.{' '}
-            <button type="button" className="underline" onClick={() => setConfirmNew(false)}>
-              Keep it
-            </button>
-          </p>
-        )}
-        {busy && (
-          <p className="mt-2 text-sm text-muted" role="status">
-            Preparing the valley...
-          </p>
-        )}
-        {loadError && (
-          <div className="panel mt-3 max-w-md p-3 text-sm" role="alert">
-            <p className="font-semibold text-bad">That did not work.</p>
-            <p className="mt-0.5 text-parchment">{loadError}</p>
-            <div className="mt-2 flex gap-2">
-              {hasSave && loadErrorKind === 'save' && (
-                <button type="button" className="btn !py-1 text-xs" onClick={discardSave}>
-                  Delete the damaged save
-                </button>
-              )}
-              <button type="button" className="btn btn-ghost !py-1 text-xs" onClick={dismissLoadError}>
-                Dismiss
+            {hasSave && (
+              <button type="button" className="btn btn-ghost w-full !py-2.5" onClick={() => void continueGame()} disabled={busy}>
+                Continue saved game <ArrowRight size={16} aria-hidden />
               </button>
-            </div>
+            )}
           </div>
-        )}
-
-        {worlds.length > 1 && <WorldPicker worlds={worlds} value={worldId ?? PROCEDURAL_WORLD_ID} onChange={setWorldId} />}
-        {worlds.length === 1 && (
-          <div className="mt-4 max-w-md text-xs text-muted">
-            <p>
-              <strong className="text-cream">{worlds[0].meta.name}:</strong> {worldSummary(worlds[0].meta)}
+          {confirmNew && (
+            <p className="mt-2 text-sm text-warn" role="alert">
+              Starting over replaces your saved game in this browser.{' '}
+              <button type="button" className="underline" onClick={() => setConfirmNew(false)}>
+                Keep it
+              </button>
             </p>
-            {genericClimateNote(worlds[0].meta) && <p className="mt-1 text-[0.7rem] text-parchment">{genericClimateNote(worlds[0].meta)}</p>}
-            <MapDetails meta={worlds[0].meta} />
-          </div>
-        )}
+          )}
+          {busy && (
+            <p className="mt-2 text-sm text-muted" role="status">
+              Loading the valley
+            </p>
+          )}
+          {loadError && (
+            <div className="panel mt-3 w-full p-3 text-left text-sm" role="alert">
+              <p className="font-semibold text-bad">That did not work.</p>
+              <p className="mt-0.5 text-parchment">{loadError}</p>
+              <div className="mt-2 flex gap-2">
+                {hasSave && loadErrorKind === 'save' && (
+                  <button type="button" className="btn !py-1 text-xs" onClick={discardSave}>
+                    Delete the damaged save
+                  </button>
+                )}
+                <button type="button" className="btn btn-ghost !py-1 text-xs" onClick={dismissLoadError}>
+                  Dismiss
+                </button>
+              </div>
+            </div>
+          )}
 
-        <section className="mt-6 max-w-md rounded-xl bg-black/25 p-4" aria-labelledby="why-h">
-          <h2 id="why-h" className="font-display text-lg font-semibold">
-            Why this game exists
-          </h2>
-          <p className="mt-1 text-sm leading-relaxed text-parchment">
-            Decisions about land, forests, farms and water shape communities for decades, but their effects are hard to see in advance. Amoria lets you try those decisions
-            safely, see the consequences, and compare different futures for the same place. It was made for the UNCCD Hack for Social Impact 2026 challenge on engaging young
-            people in land-use decisions.
-          </p>
-        </section>
-
-        <div className="mt-3 max-w-md">
-          <button type="button" className="btn btn-ghost !px-0 text-sm text-river" aria-expanded={howTo} onClick={() => setHowTo((v) => !v)}>
-            <BookOpen size={16} aria-hidden /> {howTo ? 'Hide' : 'How to play'}
-          </button>
-          {howTo && (
-            <ol className="mt-1 list-decimal space-y-1 pl-5 text-sm text-parchment">
+          <nav className="mt-5 flex items-center gap-1 text-sm" aria-label="More">
+            {links.map((l, i) => (
+              <span key={l.id} className="flex items-center gap-1">
+                {i > 0 && <span className="text-dim" aria-hidden>·</span>}
+                <button
+                  type="button"
+                  className={`rounded-md px-1.5 py-0.5 hover:text-cream ${extra === l.id ? 'text-cream' : 'text-parchment/80'}`}
+                  aria-expanded={extra === l.id}
+                  aria-controls={`extra-${l.id}`}
+                  onClick={() => setExtra((v) => (v === l.id ? null : l.id))}
+                >
+                  {l.label}
+                </button>
+              </span>
+            ))}
+          </nav>
+          <ExtraPanel id="how" open={extra}>
+            <ol className="list-decimal space-y-1 pl-5 text-sm text-parchment">
               <li>Look around. Click a parcel to see its soil, slope and water.</li>
               <li>Pick a tool from the bar at the bottom and place roads, homes, fields, forests or wetlands. Each has a price and a tradeoff.</li>
               <li>Advance time season by season. Watch food, water, soil and money respond.</li>
               <li>When something changes, open Insights to see why, with the numbers behind it.</li>
               <li>Save a run as Scenario A, try a different plan as Scenario B from the same start, and compare the two futures.</li>
             </ol>
-          )}
+          </ExtraPanel>
+          <ExtraPanel id="seed" open={extra}>
+            <p className="text-xs text-muted">Everyone who uses the same seed gets the same weather, so a class can compare plans fairly. Leave it empty for a surprise.</p>
+            <input
+              className="field tabular mt-2 !w-48"
+              inputMode="numeric"
+              placeholder="Random"
+              value={seedText}
+              aria-invalid={!seedValid}
+              aria-label="Weather seed"
+              onChange={(e) => setSeedText(e.target.value.replace(/[^0-9]/g, ''))}
+            />
+            {!seedValid && <p className="mt-1 text-xs text-bad">Use a whole number up to 4294967295.</p>}
+          </ExtraPanel>
+          <ExtraPanel id="about" open={extra}>
+            <p className="text-sm leading-relaxed text-parchment">
+              A small town in a dry river valley needs homes, food, water and work. Every road, field and forest you place changes where the rain goes, how well the soil
+              holds, and who copes when the drought comes. Amoria lets you try those decisions safely and compare different futures for the same place. Made for the UNCCD
+              Hack for Social Impact 2026 challenge on engaging young people in land-use decisions.
+            </p>
+          </ExtraPanel>
+
+          <footer className="mt-6 w-full border-t border-[rgb(247_238_220/0.12)] pt-4 text-[0.68rem] leading-snug text-muted">
+            <p>Free, no account needed. Your game is saved only in this browser. Numbers are illustrative.</p>
+            {selectedReal && <WorldAttribution worldId={selectedReal} className="mt-1 !bg-transparent !p-0 !text-dim" />}
+          </footer>
         </div>
-
-        <details className="mt-2 max-w-md text-sm">
-          <summary className="cursor-pointer text-dim hover:text-cream">Classroom option: choose a weather seed</summary>
-          <p className="mt-1 text-xs text-muted">Everyone who uses the same seed gets the same weather, so a class can compare plans fairly. Leave empty for a surprise.</p>
-          <input
-            className="field tabular mt-1.5 !w-48"
-            inputMode="numeric"
-            placeholder="Random"
-            value={seedText}
-            aria-invalid={!seedValid}
-            aria-label="Weather seed"
-            onChange={(e) => setSeedText(e.target.value.replace(/[^0-9]/g, ''))}
-          />
-          {!seedValid && <p className="mt-1 text-xs text-bad">Use a whole number up to 4294967295.</p>}
-        </details>
-
-        {selectedReal && <WorldAttribution worldId={selectedReal} className="mt-6 max-w-md" />}
-        <p className="mt-auto pt-8 text-[0.7rem] text-dim">
-          Free and non-commercial. No account needed; your game is saved only in this browser. The simulation is simplified and its numbers are illustrative.
-        </p>
       </div>
     </main>
   )
